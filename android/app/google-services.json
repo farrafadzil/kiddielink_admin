@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "688010729153",
+    "project_id": "kiddielink-eaf5a",
+    "storage_bucket": "kiddielink-eaf5a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:688010729153:android:9c07c914491b2716fd2640",
+        "android_client_info": {
+          "package_name": "com.example.kiddielink_admin_panel"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAu0896V8rSPnXA5OxNk7kxdUzSerIh1as"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
