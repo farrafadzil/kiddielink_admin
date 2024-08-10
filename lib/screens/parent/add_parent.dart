@@ -163,7 +163,6 @@ class _AddParentState extends State<AddParent> {
                 selectedRelationshipType!,
                 parentType,
               );
-              Navigator.of(context).pop();
             } else {
               // Display a snackbar or some feedback to the user
               ScaffoldMessenger.of(context).showSnackBar(

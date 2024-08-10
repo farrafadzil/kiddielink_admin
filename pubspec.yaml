@@ -53,6 +53,9 @@ dependencies:
   path_provider: ^2.0.11
   permission_handler: ^10.2.0
   syncfusion_flutter_datepicker: ^20.1.54
+  mailer: ^6.1.2
+  flutter_dotenv: ^5.1.0
+  http: ^1.2.2
 
 
 dev_dependencies:

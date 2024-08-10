@@ -57,7 +57,7 @@
   </script>
 
   <script src="https://www.gstatic.com/firebasejs/8.4.1/firebase-app.js"></script>
-  <script src="https://www. gstatic.com/firebasejs/8.4.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.4.1/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.4.1/firebase-analytics.js"></script>
 
 <script>
@@ -74,5 +74,14 @@
   firebase.initializeApp(firebaseConfig);
   firebase.analytics();
 </script>
+
+  <!-- EmailJS configuration -->
+  <script type="text/javascript" src="https://cdn.emailjs.com/dist/email.min.js"></script>
+  <script type="text/javascript">
+    (function(){
+      emailjs.init("YZYr9_x9TYMEJx52xy"); // Initialize EmailJS
+    })();
+  </script>
+
 </body>
 </html>

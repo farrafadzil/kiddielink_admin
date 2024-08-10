@@ -21,12 +21,37 @@ class _AddRoomState extends State<AddRoom> {
   Future<void> _addRoom() async {
     // Get the data from the text fields
     final String roomId = Uuid().v4();
-    final String name = _nameController.text;
-    final String description = _descriptionController.text;
+    final String name = _nameController.text.trim();
+    final String description = _descriptionController.text.trim();
     final int teachers = int.tryParse(_teacherController.text) ?? 0;
     final int students = int.tryParse(_studentController.text) ?? 0;
 
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Room name cannot be empty'),
+        ),
+      );
+      return;
+    }
+
     try {
+      // Check if the room name already exists
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('rooms')
+          .where('name', isEqualTo: name)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        // Room with the same name already exists
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Room with this name already exists'),
+          ),
+        );
+        return;
+      }
+
       // Add the data to Firestore
       await FirebaseFirestore.instance.collection('rooms').add({
         'room_id': roomId,
@@ -57,6 +82,7 @@ class _AddRoomState extends State<AddRoom> {
       );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -167,7 +193,8 @@ class _AddRoomState extends State<AddRoom> {
                       width: 150, // Fixed width for the label
                       child: Text(
                         'No of Teacher',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600),
                       ),
                     ),
                     SizedBox(width: 20),
@@ -191,7 +218,8 @@ class _AddRoomState extends State<AddRoom> {
                       width: 150, // Fixed width for the label
                       child: Text(
                         'No of Student',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600),
                       ),
                     ),
                     SizedBox(width: 20),
@@ -251,43 +279,64 @@ class _AddRoomState extends State<AddRoom> {
             borderRadius: BorderRadius.circular(5),
           ),
           child: DataTable(
-            headingRowColor: MaterialStateProperty.resolveWith((states) => Colors.grey[300]),
+            headingRowColor: MaterialStateProperty.resolveWith((
+                states) => Colors.grey[300]),
             columns: [
               DataColumn(label: Text('No.')),
               DataColumn(label: Text('Room')),
-              DataColumn(label: Text('Ratio student:staff')),
-              DataColumn(label: Text('# Checked-in students')),
-              DataColumn(label: Text('# Checked-in staff')),
+              DataColumn(label: Text('Students')),
+              DataColumn(label: Text('Staff')),
+              DataColumn(label: Text('Ratio')),
             ],
             rows: rooms.map((room) {
               int index = rooms.indexOf(room);
               final data = room.data() as Map<String, dynamic>;
               final roomName = data['name'];
-              final ratio = data['students'].toString() + ':' + data['teachers'].toString();
-              final checkedInStudents = data['students'].toString();
-              final checkedInStaff = data['teachers'].toString();
+              final students = data['students'] as int;
+              final teachers = data['teachers'] as int;
+
+              // Calculate ratio
+              String ratio;
+              if (teachers == 0) {
+                ratio = 'N/A';
+              } else {
+                final gcdValue = gcd(students, teachers);
+                final simplifiedStudents = students ~/ gcdValue;
+                final simplifiedTeachers = teachers ~/ gcdValue;
+                ratio = '$simplifiedTeachers:$simplifiedStudents';
+              }
+
+              final checkedInStudents = students.toString();
+              final checkedInStaff = teachers.toString();
+
               return DataRow(cells: [
                 DataCell(Container(
-                    width: 130,
-                    child: Text((index + 1).toString()),
+                  width: 130,
+                  child: Text((index + 1).toString()),
                 )),
                 DataCell(Container(
                     width: 250,
                     child: Text(roomName))),
                 DataCell(Container(
                     width: 250,
-                    child: Text(ratio))),
-                DataCell(Container(
-                    width: 210,
                     child: Text(checkedInStudents))),
                 DataCell(Container(
-                    width: 220,
+                    width: 210,
                     child: Text(checkedInStaff))),
+                DataCell(Container(
+                    width: 220,
+                    child: Text(ratio))),
               ]);
             }).toList(),
           ),
         );
       },
     );
+  }
+
+// Helper function to calculate GCD (Greatest Common Divisor)
+  int gcd(int a, int b) {
+    if (b == 0) return a;
+    return gcd(b, a % b);
   }
 }

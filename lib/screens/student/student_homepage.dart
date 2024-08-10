@@ -1,15 +1,20 @@
+import 'dart:convert';
 import 'dart:math';
-
+import 'dart:js' as js;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:kiddielink_admin_panel/common/app_color.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:kiddielink_admin_panel/screens/student/view_student_details.dart';
+import 'package:mailer/mailer.dart';
+import 'package:mailer/smtp_server/gmail.dart';
+import '../../common/app_color.dart';
 import '../parent/add_parent.dart';
 import '../widget/side_bar_menu.dart';
 import 'add_student.dart';
 import 'package:uuid/uuid.dart';
+import 'dart:html' as html;
+import 'package:http/http.dart' as http;
+
 
 class StudentHomePage extends StatefulWidget {
   const StudentHomePage({Key? key}) : super(key: key);
@@ -63,36 +68,121 @@ class _StudentHomePageState extends State<StudentHomePage> {
     });
   }
 
-  void showAddParentDialog(BuildContext context, String studentId) {
+  void showAddParentDialog(BuildContext context, String studentId, String fullName, String uniqueCode) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AddParent(
-          onFormSubmitted: (name, phoneNumber, email, relationshipType, parentType) {
-            // Add parent/guardian data to Firestore using the stored studentId
+          onFormSubmitted: (name, phoneNumber, email, relationshipType, parentType) async {
             String parentId = Uuid().v4();
-            FirebaseFirestore.instance.collection('student').doc(studentId).collection('parents').add({
-              'name': name,
-              'phone_number': phoneNumber,
-              'email': email,
-              'relationship_type': relationshipType,
-              'parent_type': parentType,
-              'parent_id': parentId,
-            }).then((_) {
+            try {
+              // Add the parent to Firestore
+              await FirebaseFirestore.instance.collection('student').doc(studentId).collection('parents').add({
+                'name': name,
+                'phone_number': phoneNumber,
+                'email': email,
+                'relationship_type': relationshipType,
+                'parent_type': parentType,
+                'parent_id': parentId,
+              });
+
+              // Send the unique code via email
+              sendEmail(email, fullName, uniqueCode);
+
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Parent added successfully')),
+                SnackBar(content: Text('Parent added and email sent successfully')),
               );
-              fetchStudentsWithParents(); // Refresh the data
-            }).catchError((error) {
+
+              Navigator.of(context).pop();
+            } catch (error) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Failed to add parent: $error')),
               );
-            });
+            }
           },
         );
       },
     );
   }
+
+  Future<void> sendEmail(String email, String fullName, String uniqueCode) async {
+    const serviceId = 'service_jc8vemd';
+    const templateId = 'template_gt1d6qj';
+    const userId = 'ZYr9_x9TYMEJx52xy';
+
+    final url = Uri.parse('https://api.emailjs.com/api/v1.0/email/send');
+
+    final response = await http.post(
+      url,
+      headers: {
+        'origin': 'http://localhost',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'service_id': serviceId,
+        'template_id': templateId,
+        'user_id': userId,
+        'template_params': {
+          'to_email': email,
+          'child_name': fullName,
+          'unique_code': uniqueCode,
+        }
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      print('Email sent successfully');
+    } else {
+      print('Failed to send email: ${response.body}');
+    }
+  }
+
+
+  /*Future<void> sendEmail(String email, String fullName, String uniqueCode) async {
+    final smtpServer = gmail('your-email@gmail.com', 'your-app-password');
+
+    final message = Message()
+      ..from = Address('your-email@gmail.com', 'KiddieLink')
+      ..recipients.add(email)  // Using the email passed from onFormSubmitted
+      ..subject = 'Unique Code for Check-In/Out'
+      ..text = 'Hello, \n\nHere is the unique code for $fullName: $uniqueCode. Please use this code for check-in and check-out.'
+      ..html = '<h1>Hello,</h1>\n<p>Here is the unique code for <strong>$fullName</strong>: <strong>$uniqueCode</strong>. Please use this code for check-in and check-out.</p>';
+
+    try {
+      final sendReport = await send(message, smtpServer);
+      print('Message sent: $sendReport');
+    } catch (e) {
+      print('Error occurred while sending email: $e');
+    }
+  }*/
+
+  /*void sendEmail(String email, String fullName, String uniqueCode) {
+    var serviceId = 'service_jc8vemd';
+    var templateId = 'template_gt1d6qj';
+    var userId = 'ZYr9_x9TYMEJx52xy';
+
+    var templateParams = {
+      'to_email': email,
+      'child_name': fullName,
+      'unique_code': uniqueCode,
+    };
+
+    try {
+      js.context.callMethod('emailjs.send', [
+        serviceId,
+        templateId,
+        js.JsObject.jsify(templateParams),
+        userId
+      ]);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Email sent successfully to $email')),
+      );
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to send email: $error')),
+      );
+    }
+  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -192,7 +282,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    SizedBox(height:10 ),
+                                    SizedBox(height: 10),
                                     ...student.parents.map((parent) {
                                       return Padding(
                                         padding: const EdgeInsets.only(bottom: 8.0), // Adjust the bottom padding for line spacing
@@ -210,9 +300,8 @@ class _StudentHomePageState extends State<StudentHomePage> {
                                     }).toList(),
                                     GestureDetector(
                                       onTap: () {
-                                        showAddParentDialog(context, student.studentId);
+                                        showAddParentDialog(context, student.studentId, student.fullName, student.uniqueCode);
                                       },
-
                                       child: Row(
                                         children: [
                                           Icon(Icons.person_add, size: 15),
@@ -331,8 +420,6 @@ class _StudentHomePageState extends State<StudentHomePage> {
     int randomNumber = min + random.nextInt(max - min);
     return randomNumber.toString();
   }
-
-
 }
 
 class Student {
