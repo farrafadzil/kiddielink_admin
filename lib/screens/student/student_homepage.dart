@@ -84,10 +84,11 @@ class _StudentHomePageState extends State<StudentHomePage> {
                 'relationship_type': relationshipType,
                 'parent_type': parentType,
                 'parent_id': parentId,
+                'password': phoneNumber, // Save phone number as password
               });
 
               // Send the unique code via email
-              sendEmail(email, fullName, uniqueCode);
+              sendEmail(email, fullName, uniqueCode, phoneNumber);
 
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Parent added and email sent successfully')),
@@ -105,7 +106,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
     );
   }
 
-  Future<void> sendEmail(String email, String fullName, String uniqueCode) async {
+  Future<void> sendEmail(String email, String fullName, String uniqueCode, String phoneNumber) async {
     const serviceId = 'service_jc8vemd';
     const templateId = 'template_gt1d6qj';
     const userId = 'ZYr9_x9TYMEJx52xy';
@@ -126,6 +127,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
           'to_email': email,
           'child_name': fullName,
           'unique_code': uniqueCode,
+          'password': phoneNumber,
         }
       }),
     );

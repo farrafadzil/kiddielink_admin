@@ -12,9 +12,11 @@ class MedicInfo extends StatefulWidget {
 
 class _MedicInfoState extends State<MedicInfo> {
   bool _isEditing = false;
+  bool _isUpdating = false; // To track if we are updating an existing document
   late TextEditingController _allergiesController;
   late TextEditingController _medicCondiController;
   late TextEditingController _medicineController;
+  String? _medicalInfoId; // To store the ID of the document being edited
 
   @override
   void initState() {
@@ -23,29 +25,98 @@ class _MedicInfoState extends State<MedicInfo> {
     _medicCondiController = TextEditingController();
     _medicineController = TextEditingController();
 
-    // Fetch certificate data when the widget initializes
-    FirebaseFirestore.instance
-        .collection('student')
-        .doc(widget.studentId)
-        .collection('medical_info')
-        .get()
-        .then((QuerySnapshot querySnapshot) {
-      querySnapshot.docs.forEach((DocumentSnapshot documentSnapshot) {
-        if (documentSnapshot.exists) {
-          Map<String, dynamic> data = documentSnapshot.data() as Map<String, dynamic>;
-          setState(() {
-            // Here you can access certId and other fields from the document
-            _allergiesController.text = data['allergies'] ?? '';
-            _medicCondiController.text = data['medical_condition'] ?? '';
-            _medicineController.text = data['medicine'] ?? '';
-          });
-        } else {
-          print('Document does not exist on the database');
-        }
+    // Fetch medical info data when the widget initializes
+    _fetchMedicalInfo();
+  }
+
+  void _fetchMedicalInfo() async {
+    try {
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('student')
+          .doc(widget.studentId)
+          .collection('medical_info')
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        DocumentSnapshot documentSnapshot = querySnapshot.docs.first;
+        Map<String, dynamic> data = documentSnapshot.data() as Map<String, dynamic>;
+        setState(() {
+          _medicalInfoId = documentSnapshot.id;
+          _allergiesController.text = data['allergies'] ?? '';
+          _medicCondiController.text = data['medical_condition'] ?? '';
+          _medicineController.text = data['medicine'] ?? '';
+          _isUpdating = true;
+        });
+      } else {
+        print('No medical info document found. You can add new data.');
+        _isUpdating = false;
+      }
+    } catch (error) {
+      print('Error fetching medical info data: $error');
+    }
+  }
+
+  void _saveOrUpdateCertificateData() {
+    final data = {
+      'allergies': _allergiesController.text,
+      'medical_condition': _medicCondiController.text,
+      'medicine': _medicineController.text,
+    };
+
+    if (_isUpdating && _medicalInfoId != null) {
+      // Update existing document
+      FirebaseFirestore.instance
+          .collection('student')
+          .doc(widget.studentId)
+          .collection('medical_info')
+          .doc(_medicalInfoId)
+          .update(data)
+          .then((_) {
+        print('Medical info data updated successfully!');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Medical info details updated successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }).catchError((error) {
+        print('Error updating medical info data: $error');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update medical info.'),
+            backgroundColor: Colors.red,
+          ),
+        );
       });
-    }).catchError((error) {
-      print('Error fetching certificate data: $error');
-    });
+    } else {
+      // Add new document
+      FirebaseFirestore.instance
+          .collection('student')
+          .doc(widget.studentId)
+          .collection('medical_info')
+          .add(data)
+          .then((docRef) {
+        setState(() {
+          _medicalInfoId = docRef.id; // Save the document ID for future updates
+          _isUpdating = true;
+        });
+        print('Medical info data saved successfully!');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Medical info details saved successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }).catchError((error) {
+        print('Error saving medical info data: $error');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save medical info.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      });
+    }
   }
 
   @override
@@ -54,19 +125,6 @@ class _MedicInfoState extends State<MedicInfo> {
     _medicCondiController.dispose();
     _medicineController.dispose();
     super.dispose();
-  }
-
-  void _saveCertificateData() {
-
-    FirebaseFirestore.instance.collection('student').doc(widget.studentId).collection('medical_info').doc().set({
-      'allergies': _allergiesController.text,
-      'medical_info': _medicCondiController.text,
-      'medicine': _medicineController.text,
-    }).then((_) {
-      print('Certificate data saved successfully!');
-    }).catchError((error) {
-      print('Error saving certificate data: $error');
-    });
   }
 
   @override
@@ -130,7 +188,8 @@ class _MedicInfoState extends State<MedicInfo> {
                                       ),
                                     ),
                                   ),
-                                  replacement: Text( _allergiesController.text.isNotEmpty ? _allergiesController.text : "None",
+                                  replacement: Text(
+                                    _allergiesController.text.isNotEmpty ? _allergiesController.text : "None",
                                     style: TextStyle(
                                       color: Colors.grey,
                                       fontSize: 12,
@@ -204,7 +263,7 @@ class _MedicInfoState extends State<MedicInfo> {
                                     child: TextFormField(
                                       controller: _medicineController,
                                       decoration: InputDecoration(
-                                        hintText: "Enter Credit",
+                                        hintText: "Enter Medications",
                                         hintStyle: TextStyle(
                                           fontSize: 12,
                                         ),
@@ -239,10 +298,10 @@ class _MedicInfoState extends State<MedicInfo> {
             onPressed: () {
               setState(() {
                 _isEditing = !_isEditing;
+                if (!_isEditing && (_allergiesController.text.isNotEmpty || _medicCondiController.text.isNotEmpty || _medicineController.text.isNotEmpty)) {
+                  _saveOrUpdateCertificateData();
+                }
               });
-              if (!_isEditing) {
-                _saveCertificateData();
-              }
             },
             child: Text(_isEditing ? 'Save' : 'Edit'),
           ),
@@ -252,7 +311,7 @@ class _MedicInfoState extends State<MedicInfo> {
           right: 100,
           child: Visibility(
             visible: _isEditing,
-            child: ElevatedButton(
+            child: TextButton(
               onPressed: () {
                 setState(() {
                   _isEditing = false;

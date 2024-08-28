@@ -184,7 +184,7 @@ class _AddStudentState extends State<AddStudent> {
                     } else {
                       // Display a snackbar or some feedback to the user
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text("Please fill all fields"),
+                        content: Text("Please fill all the required fields."),
                       ));
                     }
                     setState(() {
