@@ -311,7 +311,7 @@ class _MedicInfoState extends State<MedicInfo> {
           right: 100,
           child: Visibility(
             visible: _isEditing,
-            child: ElevatedButton(
+            child: TextButton(
               onPressed: () {
                 setState(() {
                   _isEditing = false;
