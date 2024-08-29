@@ -252,7 +252,7 @@ class _CertificateState extends State<Certificate> {
           right: 100,
           child: Visibility(
             visible: _isEditing,
-            child: ElevatedButton(
+            child: TextButton(
               onPressed: () {
                 setState(() {
                   _isEditing = false;

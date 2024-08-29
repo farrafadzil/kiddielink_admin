@@ -152,10 +152,10 @@ class _BasicInfoState extends State<BasicInfo> {
             child: Text(_error, style: TextStyle(color: Colors.black),),
           ),
         Container(
-          padding: EdgeInsets.all(16.0),
+          padding: EdgeInsets.only(left: 16.0, right: 16.0, bottom: 1.0, top: 16.0),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            color: Color(0xFFF3E5F5),
+            color: Colors.white,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

@@ -85,7 +85,7 @@ class _TeacherHomePageState extends State<TeacherHomePage> {
                         'status': 'Active', // Set default status
                       }).then((_) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Teacher added successfully')),
+                          SnackBar(content: Text('Staff added successfully.')),
                         );
                         fetchTeachers(); // Refresh the teacher list
                       }).catchError((error) {

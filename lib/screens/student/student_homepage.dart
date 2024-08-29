@@ -238,7 +238,6 @@ class _StudentHomePageState extends State<StudentHomePage> {
                         dataRowHeight: 100,
                         columns: [
                           DataColumn(label: Text("NAME", style: TextStyle(fontWeight: FontWeight.bold),)),
-                          DataColumn(label: Text("SIGNED UP", style: TextStyle(fontWeight: FontWeight.bold),)),
                           DataColumn(label: Text("PARENTS", style: TextStyle(fontWeight: FontWeight.bold),)),
                           DataColumn(label: Text("CHECK-IN/OUT CODE", style: TextStyle(fontWeight: FontWeight.bold),)),
                           DataColumn(label: Text("STATUS", style: TextStyle(fontWeight: FontWeight.bold),)),
@@ -261,21 +260,6 @@ class _StudentHomePageState extends State<StudentHomePage> {
                                         Text(student.preferredName),
                                         Text(student.fullName, style: TextStyle(color: Colors.grey, fontSize: 12)),
                                       ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              DataCell(
-                                Row(
-                                  children: [
-                                    Text(_revealedStudentId == student.studentId ? student.uniqueCode : '****'),
-                                    IconButton(
-                                      icon: Icon(_revealedStudentId == student.studentId ? Icons.visibility_off : Icons.visibility),
-                                      onPressed: () {
-                                        setState(() {
-                                          _revealedStudentId = _revealedStudentId == student.studentId ? null : student.studentId;
-                                        });
-                                      },
                                     ),
                                   ],
                                 ),
